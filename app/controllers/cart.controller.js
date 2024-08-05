@@ -6,10 +6,13 @@ const cartControllers = {};
 // Add a product to the cart
 cartControllers.addToCart = async (req, res) => {
 	try {
-		const { userId, productId, quantity } = req.body;
+		let { productId, quantity } = req.body;
+		const userId = req.authID;
 
-		if (!userId || !productId) {
-			return res.status(400).send({ status: false, msg: "User ID and Product ID are required." });
+		quantity=quantity ? quantity : 1;
+
+		if (!productId) {
+			return res.status(400).send({ status: false, msg: "Product ID is required." });
 		}
 
 		const product = await Product.findById(productId);
@@ -44,10 +47,11 @@ cartControllers.addToCart = async (req, res) => {
 // Remove a product from the cart
 cartControllers.removeFromCart = async (req, res) => {
 	try {
-		const { userId, productId } = req.body;
+		const { productId } = req.body;
+		const userId = req.authID;
 
-		if (!userId || !productId) {
-			return res.status(400).send({ status: false, msg: "User ID and Product ID are required." });
+		if (!productId) {
+			return res.status(400).send({ status: false, msg: "Product ID is required." });
 		}
 
 		let cart = await Cart.findOne({ userId });
@@ -62,7 +66,7 @@ cartControllers.removeFromCart = async (req, res) => {
 				return res.status(404).send({ status: false, msg: "Product not found in cart." });
 			}
 		} else {
-			return res.status(404).send({ status: false, msg: "Cart not found." });
+			return res.status(404).send({ status: false, msg: "Your Cart is Empty..." });
 		}
 	} catch (error) {
 		console.error(error);
@@ -73,16 +77,15 @@ cartControllers.removeFromCart = async (req, res) => {
 // Get cart items for a user
 cartControllers.getCart = async (req, res) => {
 	try {
-		const { userId } = req.params;
+		const userId = req.authID;
 
-		if (!userId) {
-			return res.status(400).send({ status: false, msg: "User ID is required." });
-		}
-
-		const cart = await Cart.findOne({ userId }).populate("products.productId", "name price description");
+		const cart = await Cart.findOne({ userId }).populate(
+			"products.productId",
+			"name price description productImages averageRating discountedPrice"
+		);
 
 		if (!cart) {
-			return res.status(404).send({ status: false, msg: "Cart not found." });
+			return res.status(200).send({ status: true, msg: "Your Cart is empty" });
 		}
 
 		return res.status(200).send({ status: true, msg: "Cart fetched successfully.", data: cart });

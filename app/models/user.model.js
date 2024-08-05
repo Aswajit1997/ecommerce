@@ -5,7 +5,20 @@ const jwt = require("jsonwebtoken");
 const userSchema = new mongoose.Schema(
 	{
 		name: { type: String, required: true },
-		email: { type: String },
+		email: { type: String, unique: true },
+		phone: { type: String, unique: true },
+		address: { type: String },
+		pinCode: { type: Number },
+		state: { type: String },
+		country: { type: String },
+		city: { type: String },
+		locality: { type: String },
+		street: { type: String },
+		profilePic: {
+			type: String,
+			default:
+				"https://firebasestorage.googleapis.com/v0/b/file-upload-demo-213de.appspot.com/o/defaultAvatar.jpg?alt=media&token=56f59056-fc87-47cb-9f42-98f8406f892a",
+		},
 		otp: { type: Number },
 		password: { type: String, required: true },
 	},

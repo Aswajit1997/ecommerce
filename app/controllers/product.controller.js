@@ -1,33 +1,31 @@
 const Product = require("../models/product.model");
 const Category = require("../models/category.model");
-const { imageUpload,deleteFromFirebase } = require("../config/firebase");
+const Payment = require("../models/payment.model");
+const { imageUpload, deleteFromFirebase } = require("../config/firebase");
 
 const productControllers = {};
 
-// Create a new product
 productControllers.create = async (req, res) => {
 	try {
-		const { name, price, discount, category,description } = req.body;
+		const { name, price, discount, category, description, brand, color, offers, pattern, size, occasion, fabric } = req.body;
 		const files = req.files;
 
-		if (!name || !category || !description || !files || files.length === 0) {
-			return res.status(400).send({ status: false, msg: "Please provide all required fields and at least one image." });
-		}
+		if (!name) return res.status(400).send({ status: false, msg: "Please provide the product name." });
+		if (!price) return res.status(400).send({ status: false, msg: "Please provide the product price." });
+		if (!category) return res.status(400).send({ status: false, msg: "Please provide the product category." });
+		if (!description) return res.status(400).send({ status: false, msg: "Please provide the product description." });
+		if (!files || files.length === 0)
+			return res.status(400).send({ status: false, msg: "Please provide at least one product image." });
 
-		// Find the category by name
 		const categoryDoc = await Category.findOne({ name: category });
-		if (!categoryDoc) {
-			return res.status(404).send({ status: false, msg: "Category not found." });
-		}
+		if (!categoryDoc) return res.status(404).send({ status: false, msg: "Category not found." });
 
 		let productImages = [];
 		for (const file of files) {
 			const folderName = categoryDoc.name;
 			const filename = `${name}-${categoryDoc.name}-${Date.now()}`;
 			const imgUrl = await imageUpload(file, filename, folderName);
-			if (imgUrl) {
-				productImages.push(imgUrl);
-			}
+			if (imgUrl) productImages.push(imgUrl);
 		}
 
 		const newProduct = await Product.create({
@@ -35,8 +33,16 @@ productControllers.create = async (req, res) => {
 			price,
 			description,
 			discount,
+			brand,
+			color: JSON.parse(color),
+			offers,
+			pattern,
+			size,
+			occasion,
+			fabric,
 			productImages,
 			category: categoryDoc._id,
+			createdBy: req.authID,
 		});
 
 		return res.status(200).send({ status: true, msg: "Product created successfully.", data: newProduct });
@@ -46,17 +52,13 @@ productControllers.create = async (req, res) => {
 	}
 };
 
-// Delete a product
 productControllers.delete = async (req, res) => {
 	try {
 		const { id } = req.params;
 
 		const product = await Product.findById(id);
-		if (!product) {
-			return res.status(404).send({ status: false, msg: "Product not found." });
-		}
+		if (!product) return res.status(404).send({ status: false, msg: "Product not found." });
 
-		// Delete product images from Firebase
 		for (const imgUrl of product.productImages) {
 			await deleteFromFirebase(imgUrl);
 		}
@@ -70,7 +72,6 @@ productControllers.delete = async (req, res) => {
 	}
 };
 
-// Get all products with pagination
 productControllers.getAll = async (req, res) => {
 	try {
 		const page = parseInt(req.query.page) >= 1 ? parseInt(req.query.page) : 1;
@@ -83,6 +84,18 @@ productControllers.getAll = async (req, res) => {
 		};
 
 		const filter = {};
+		const { category, brand, color, priceRange } = req.query;
+
+		if (category) {
+			const categoryDoc = await Category.findOne({ name: category });
+			if (categoryDoc) filter.category = categoryDoc._id;
+		}
+		if (brand) filter.brand = brand;
+		if (color) filter.color = { $in: color.split(",") };
+		if (priceRange) {
+			const [min, max] = priceRange.split("-").map(Number);
+			filter.price = { $gte: min, $lte: max };
+		}
 
 		const data = await Product.find(filter, null, options).populate("category", "name");
 		const totalDataCount = await Product.countDocuments(filter);
@@ -101,20 +114,72 @@ productControllers.getAll = async (req, res) => {
 	}
 };
 
-// Get products by category
 productControllers.getByCategory = async (req, res) => {
 	try {
 		const { category } = req.query;
 
 		const categoryDoc = await Category.findOne({ name: category });
-		if (!categoryDoc) {
-			return res.status(404).send({ status: false, msg: "Category not found." });
-		}
-		console.log(categoryDoc);
+		if (!categoryDoc) return res.status(404).send({ status: false, msg: "Category not found." });
 
 		const products = await Product.find({ category: categoryDoc._id });
 
 		return res.status(200).send({ status: true, msg: "Products fetched successfully.", data: products });
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({ status: false, msg: error.message });
+	}
+};
+
+productControllers.edit = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { name, price, discount, category, description, brand, color, offers, pattern, size, occasion, fabric } = req.body;
+		const files = req.files;
+
+		const product = await Product.findById(id);
+		if (!product) return res.status(404).send({ status: false, msg: "Product not found." });
+
+		let categoryDoc;
+		if (category) {
+			categoryDoc = await Category.findOne({ name: category });
+			if (!categoryDoc) return res.status(404).send({ status: false, msg: "Category not found." });
+			product.category = categoryDoc._id;
+		}
+
+		if (files && files.length > 0) {
+			for (const imgUrl of product.productImages) {
+				await deleteFromFirebase(imgUrl);
+			}
+
+			let productImages = [];
+			for (const file of files) {
+				const folderName = categoryDoc ? categoryDoc.name : product.category.name;
+				const filename = `${name}-${folderName}-${Date.now()}`;
+				const imgUrl = await imageUpload(file, filename, folderName);
+				if (imgUrl) productImages.push(imgUrl);
+			}
+			product.productImages = productImages;
+		}
+
+		product.name = name || product.name;
+		product.price = price || product.price;
+		product.discount = discount || product.discount;
+		product.description = description || product.description;
+		product.brand = brand || product.brand;
+		product.color = color ? JSON.parse(color) : product.color;
+		product.offers = offers || product.offers;
+		product.pattern = pattern || product.pattern;
+		product.size = size || product.size;
+		product.occasion = occasion || product.occasion;
+		product.fabric = fabric || product.fabric;
+
+		if (price || discount) {
+			product.discountedPrice = product.price - (product.price * product.discount) / 100;
+		}
+
+		await product.save();
+
+		return res.status(200).send({ status: true, msg: "Product updated successfully.", data: product });
 	} catch (error) {
 		console.error(error);
 		res.status(500).send({ status: false, msg: error.message });

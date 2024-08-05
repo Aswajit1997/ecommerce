@@ -39,8 +39,6 @@ categoryControllers.delete = async (req, res) => {
 	}
 };
 
-
-
 // Get categories Array
 categoryControllers.getAll = async (req, res) => {
 	try {
@@ -51,7 +49,6 @@ categoryControllers.getAll = async (req, res) => {
 		res.status(500).send({ status: false, msg: error.message });
 	}
 };
-
 
 // Get categories Array
 categoryControllers.getCategoryArray = async (req, res) => {

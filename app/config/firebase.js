@@ -8,6 +8,7 @@ const {
 	FIREBASE_storageBucket,
 	FIREBASE_messagingSenderId,
 	FIREBASE_appId,
+	FIREBASE_measurementId,
 } = require("../config/config");
 
 const firebaseConfig = {
@@ -17,6 +18,7 @@ const firebaseConfig = {
 	storageBucket: FIREBASE_storageBucket,
 	messagingSenderId: FIREBASE_messagingSenderId,
 	appId: FIREBASE_appId,
+	measurementId: FIREBASE_measurementId,
 };
 
 initializeApp(firebaseConfig);

@@ -14,12 +14,12 @@ const fs = require("fs");
 connectDB();
 
 // Refine CORS options
-const corsOptions = {
-	origin: "*",
-	optionsSuccessStatus: 200,
-};
+// const corsOptions = {
+// 	origin: "*",
+// 	optionsSuccessStatus: 200,
+// };
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json({ limit: "5mb" }));
 app.use(helmet());
 app.use(morgan("common"));
