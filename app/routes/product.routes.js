@@ -15,4 +15,10 @@ module.exports = (router) => {
 	// Get all products with pagination
 	router.get("/productsByCategory", productControllers.getByCategory);
 	router.get("/products", productControllers.getAll);
+
+	//add a coupon to a product
+	router.post("/product/addCoupon", auth.adminAccess(), productControllers.addCoupon);
+
+	// Remove coupon from product
+	router.post("/product/removeCoupon", auth.adminAccess(), productControllers.removeCoupon);
 };

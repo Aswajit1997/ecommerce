@@ -1,7 +1,7 @@
 require("dotenv").config();
 module.exports = {
 	MONGO_URL: `mongodb+srv://chiku1997:mongoatlas@cluster0.w74vi8m.mongodb.net/E-commerce-BE?retryWrites=true&w=majority&appName=Cluster0`,
-	PORT: process.env.PORT || 3080,
+	PORT: process.env.PORT || 3079,
 
 	FIREBASE_apiKey: "AIzaSyBXt7meo7I36S-Im8qONL1gOuPkYH14MKY",
 	FIREBASE_authDomain: "hiring-roof.firebaseapp.com",

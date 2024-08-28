@@ -6,4 +6,6 @@ module.exports = (router) => {
 	router.post("/cart/add", auth.grantAccess(), cartControllers.addToCart);
 	router.post("/cart/remove", auth.grantAccess(), cartControllers.removeFromCart);
 	router.get("/cart", auth.grantAccess(), cartControllers.getCart);
+	router.post("/applyCoupon", auth.grantAccess(), cartControllers.applyCoupon);
+	router.post("/removeCoupon/:productId", auth.grantAccess(), cartControllers.removeCoupon);
 };
