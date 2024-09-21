@@ -246,4 +246,68 @@ productControllers.removeCoupon = async (req, res) => {
 	}
 };
 
+productControllers.toggleNewArrival = async (req, res) => {
+	try {
+		const { productId } = req.params;
+
+		if (!mongoose.Types.ObjectId.isValid(productId)) {
+			return res.status(400).send({ status: false, msg: "Invalid product ID." });
+		}
+
+		const product = await Product.findById(productId);
+		if (!product) {
+			return res.status(404).send({ status: false, msg: "Product not found." });
+		}
+
+		product.newArrival = !product.newArrival;
+		await product.save();
+
+		return res.status(200).send({
+			status: true,
+			msg: `Product ${product.newArrival ? "added to" : "removed from"} New Arrivals.`,
+			data: product,
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({ status: false, msg: error.message });
+	}
+};
+
+productControllers.getNewArrivals = async (req, res) => {
+	try {
+		const page = parseInt(req.query.page, 10) || 1;
+		const limit = parseInt(req.query.limit, 10) || 25;
+		const options = {
+			limit: limit,
+			skip: (page - 1) * limit,
+			sort: { createdAt: -1 },
+		};
+
+		const filter = { newArrival: true };
+
+		// Fetch the new arrival products with pagination
+		const data = await Product.find(filter, null, options)
+			.populate("category", "name")
+			.populate("subCategory", "name")
+			.populate("availableCoupons", "code discount")
+			.select("-createdAt -updatedAt -__v");
+
+		// Count total number of new arrival products
+		const totalDataCount = await Product.countDocuments(filter);
+
+		return res.status(200).json({
+			status: true,
+			msg: "New Arrival products fetched successfully.",
+			totalData: totalDataCount,
+			totalPage: Math.ceil(totalDataCount / limit),
+			currentPage: page,
+			data: data,
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({ status: false, msg: error.message });
+	}
+};
+
+
 module.exports = productControllers;

@@ -14,6 +14,8 @@ const productSchema = new mongoose.Schema(
 		discountedPrice: { type: Number },
 		rating: [ratingSchema],
 		averageRating: { type: Number, default: 0 },
+		newArrival: { type: Boolean, default: false },
+		bestDealProduct: { type: Boolean, default: false },
 		brand: { type: String },
 		ram: { type: String },
 		internalStorage: { type: String },

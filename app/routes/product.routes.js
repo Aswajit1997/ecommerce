@@ -21,4 +21,9 @@ module.exports = (router) => {
 
 	// Remove coupon from product
 	router.post("/product/removeCoupon", auth.adminAccess(), productControllers.removeCoupon);
+
+	//toggle new arrival
+	router.put("/product/toggleNewArrival/:productId", auth.adminAccess(), productControllers.toggleNewArrival);
+
+	router.get("/products/newArrivals", productControllers.getNewArrivals);
 };
